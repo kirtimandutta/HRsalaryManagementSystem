@@ -12,7 +12,7 @@ export function PageHeader({
   return (
     <header className="mb-6 max-w-3xl">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">{eyebrow}</p>
-      <h1 className="mt-1 font-display text-3xl font-medium tracking-tight sm:text-4xl">{title}</h1>
+      <h1 className="mt-1 font-display text-2xl font-medium tracking-tight sm:text-3xl lg:text-4xl">{title}</h1>
       <p className="mt-2 text-sm leading-6 text-muted sm:text-base">{description}</p>
     </header>
   );
@@ -21,14 +21,14 @@ export function PageHeader({
 export function SectionTitle({ title, detail }: { title: string; detail?: string }) {
   return (
     <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-      <h2 className="font-display text-xl font-medium">{title}</h2>
+      <h2 className="font-display text-lg font-medium sm:text-xl">{title}</h2>
       {detail ? <p className="text-sm text-muted">{detail}</p> : null}
     </div>
   );
 }
 
 export function Card({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <section className={cn("rounded-2xl border border-line bg-card p-5", className)}>{children}</section>;
+  return <section className={cn("rounded-2xl border border-line bg-card p-4 sm:p-5", className)}>{children}</section>;
 }
 
 export function Button({
@@ -43,7 +43,7 @@ export function Button({
     <button
       type={type}
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50",
         variant === "primary" && "bg-accent text-white hover:bg-[#7c2d12]",
         variant === "secondary" && "border border-line bg-white text-foreground hover:bg-stone-50",
         variant === "ghost" && "text-foreground hover:bg-stone-100",
@@ -80,7 +80,7 @@ export function TextInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       className={cn(
-        "h-10 w-full rounded-xl border border-line bg-white px-3 text-sm outline-none focus:border-accent",
+        "h-11 w-full rounded-xl border border-line bg-white px-3 text-base outline-none focus:border-accent sm:text-sm",
         className,
       )}
       {...rest}
@@ -93,7 +93,7 @@ export function SelectInput(props: React.SelectHTMLAttributes<HTMLSelectElement>
   return (
     <select
       className={cn(
-        "h-10 w-full rounded-xl border border-line bg-white px-3 text-sm outline-none focus:border-accent",
+        "h-11 w-full rounded-xl border border-line bg-white px-3 text-base outline-none focus:border-accent sm:text-sm",
         className,
       )}
       {...rest}

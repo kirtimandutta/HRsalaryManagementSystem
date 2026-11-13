@@ -115,7 +115,7 @@ export function SalaryDrawer({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-card shadow-2xl"
+        className="drawer-in absolute inset-0 flex h-dvh w-full flex-col bg-card sm:inset-y-0 sm:left-auto sm:right-0 sm:h-auto sm:max-w-md sm:shadow-2xl"
       >
         <form
           className="flex min-h-0 flex-1 flex-col"
@@ -124,9 +124,9 @@ export function SalaryDrawer({
             void save();
           }}
         >
-          <div className="border-b border-line px-5 py-5">
+          <div className="border-b border-line px-4 py-4 sm:px-5 sm:py-5">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">{employee.employeeId}</p>
-            <h2 id={titleId} className="mt-1 font-display text-2xl font-medium">
+            <h2 id={titleId} className="mt-1 font-display text-xl font-medium sm:text-2xl">
               {employee.fullName}
             </h2>
             <p className="mt-1 text-sm text-muted">
@@ -138,13 +138,13 @@ export function SalaryDrawer({
               </p>
             ) : null}
           </div>
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5">
             <MoneyField id="base-salary" label={`Annual base (${employee.currency})`} value={baseSalary} onChange={setBaseSalary} />
             <MoneyField id="bonus" label={`Annual bonus (${employee.currency})`} value={bonus} onChange={setBonus} />
             <MoneyField id="allowance" label={`Annual allowance (${employee.currency})`} value={allowance} onChange={setAllowance} />
             <div className="rounded-2xl bg-stone-50 px-4 py-3 text-sm">
               <p className="text-muted">Normalized total</p>
-              <p className="mt-1 font-display text-2xl tabular-nums">{preview ? formatUsdPrecise(preview.totalCompUsd) : "—"}</p>
+              <p className="mt-1 break-words font-display text-xl tabular-nums sm:text-2xl">{preview ? formatUsdPrecise(preview.totalCompUsd) : "—"}</p>
               {rate !== null ? (
                 <p className="mt-1 text-muted">
                   1 {employee.currency} = {rate} USD. Amounts are annual gross.
@@ -174,12 +174,12 @@ export function SalaryDrawer({
               </ul>
             </div>
           </div>
-          <div className="flex justify-end gap-2 border-t border-line px-5 py-4">
-            <Button variant="secondary" onClick={onClose} disabled={saving}>
+          <div className="flex gap-2 border-t border-line bg-card px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:justify-end sm:px-5 sm:py-4">
+            <Button variant="secondary" className="flex-1 sm:flex-none" onClick={onClose} disabled={saving}>
               Cancel
             </Button>
-            <Button type="submit" disabled={saving || !preview}>
-              {saving ? "Saving…" : "Save compensation"}
+            <Button type="submit" className="flex-1 sm:flex-none" disabled={saving || !preview}>
+              {saving ? "Saving…" : "Save"}
             </Button>
           </div>
         </form>

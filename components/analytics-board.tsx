@@ -31,7 +31,33 @@ export function AnalyticsBoard({ report }: { report: AnalyticsReport }) {
           title="Department spending"
           detail="Range includes the seniority mix, not only pay decisions"
         />
-        <div className="overflow-x-auto">
+        <ul className="space-y-3 md:hidden">
+          {report.departments.map((row) => {
+            const parts = row.baseUsd + row.bonusUsd + row.allowanceUsd;
+            return (
+              <li key={row.key} className="rounded-xl border border-line px-3 py-3">
+                <div className="flex items-baseline justify-between gap-3">
+                  <p className="font-medium">{row.key}</p>
+                  <p className="tabular-nums">{formatUsd(row.totalAnnualUsd)}</p>
+                </div>
+                <p className="mt-1 text-sm text-muted">
+                  {formatNumber(row.headcount)} people · avg {formatUsd(row.averageAnnualUsd)}
+                </p>
+                <p className="text-sm text-muted">
+                  Low {formatUsd(row.minAnnualUsd)} · High {formatUsd(row.maxAnnualUsd)}
+                </p>
+                <div className="mt-2">
+                  <MixBar
+                    base={parts === 0 ? 0 : row.baseUsd / parts}
+                    bonus={parts === 0 ? 0 : row.bonusUsd / parts}
+                    allowance={parts === 0 ? 0 : row.allowanceUsd / parts}
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="scroll-fade hidden md:block">
           <table className="w-full min-w-[760px] text-left text-sm">
             <thead className="text-xs uppercase tracking-wide text-muted">
               <tr>
@@ -82,7 +108,21 @@ export function AnalyticsBoard({ report }: { report: AnalyticsReport }) {
         </Card>
         <Card>
           <SectionTitle title="Highest earners" detail="On payroll" />
-          <table className="w-full text-left text-sm">
+          <ul className="space-y-3 sm:hidden">
+            {report.topEarners.map((employee) => (
+              <li key={employee.id} className="border-t border-line pt-3 first:border-t-0 first:pt-0">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium">{employee.fullName}</p>
+                    <p className="text-xs text-muted">{employee.title}</p>
+                    <p className="mt-1 text-sm text-muted">{employee.department} · {employee.country}</p>
+                  </div>
+                  <p className="shrink-0 tabular-nums">{formatUsd(employee.totalCompUsd)}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <table className="hidden w-full text-left text-sm sm:table">
             <thead className="text-xs uppercase tracking-wide text-muted">
               <tr>
                 <th className="py-2 font-medium">Employee</th>
@@ -114,7 +154,8 @@ export function AnalyticsBoard({ report }: { report: AnalyticsReport }) {
           title="Pay by department and band"
           detail="Cell color compares the band average with the org average"
         />
-        <div className="overflow-x-auto">
+        <p className="mb-3 text-sm text-muted xl:hidden">Swipe sideways to compare every band.</p>
+        <div className="scroll-fade">
           <table className="w-full min-w-[760px] border-separate border-spacing-1 text-left text-sm">
             <thead>
               <tr>

@@ -9,7 +9,7 @@ import { formatNumber, formatPercent, formatRate, formatUsd } from "@/lib/format
 export function DashboardView({ stats }: { stats: OrgStats }) {
   return (
     <div className="space-y-6">
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
         <MetricCard
           icon={Users}
           label="Payroll headcount"

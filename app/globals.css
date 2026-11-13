@@ -36,3 +36,57 @@ body {
 ::selection {
   background: #fed7aa;
 }
+
+.scroll-fade {
+  overflow-x: auto;
+  background-image:
+    linear-gradient(to right, var(--card), var(--card)),
+    linear-gradient(to left, var(--card), var(--card)),
+    linear-gradient(to right, rgba(28, 25, 23, 0.16), transparent),
+    linear-gradient(to left, rgba(28, 25, 23, 0.16), transparent);
+  background-position:
+    left center,
+    right center,
+    left center,
+    right center;
+  background-repeat: no-repeat;
+  background-size:
+    20px 100%,
+    20px 100%,
+    14px 100%,
+    14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(12%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.sheet-in {
+  animation: sheet-in 180ms ease-out;
+}
+
+.drawer-in {
+  animation: drawer-in 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-in,
+  .drawer-in {
+    animation: none;
+  }
+}

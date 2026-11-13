@@ -55,7 +55,7 @@ export function QueryPanel() {
             onChange={(event) => setQuestion(event.target.value)}
             placeholder="What is the average salary in Engineering in the US?"
           />
-          <Button type="submit" disabled={loading || question.trim().length < 3}>
+          <Button type="submit" className="w-full sm:w-auto" disabled={loading || question.trim().length < 3}>
             {loading ? "Looking up…" : "Ask"}
           </Button>
         </div>
@@ -67,7 +67,7 @@ export function QueryPanel() {
             <button
               key={sample}
               type="button"
-              className="rounded-full border border-line bg-white px-3 py-1.5 text-left text-xs text-stone-700 hover:border-accent hover:text-accent"
+              className="inline-flex min-h-11 items-center rounded-full border border-line bg-white px-3 py-2 text-left text-sm text-stone-700 hover:border-accent hover:text-accent"
               onClick={() => void ask(sample)}
             >
               {sample}
@@ -84,7 +84,7 @@ export function QueryPanel() {
             <Badge tone={result.ok ? "good" : "warn"}>{result.label}</Badge>
           </div>
           <p className="mt-3 text-sm text-muted">{result.interpretation}</p>
-          <p className="mt-2 font-display text-2xl font-medium leading-snug">{result.summary}</p>
+          <p className="mt-2 font-display text-xl font-medium leading-snug sm:text-2xl">{result.summary}</p>
 
           {result.metrics.length > 0 ? (
             <dl className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -117,7 +117,22 @@ export function QueryPanel() {
           ) : null}
 
           {result.employees.length > 0 ? (
-            <div className="mt-5 overflow-x-auto">
+            <>
+            <ul className="mt-5 space-y-3 sm:hidden">
+              {result.employees.map((employee) => (
+                <li key={employee.id} className="rounded-xl border border-line px-3 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium">{employee.fullName}</p>
+                      <p className="text-xs text-muted">{employee.title}</p>
+                      <p className="mt-1 text-sm text-muted">{employee.department} · {employee.country}</p>
+                    </div>
+                    <p className="shrink-0 tabular-nums">{formatUsd(employee.totalCompUsd)}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="scroll-fade mt-5 hidden sm:block">
               <table className="w-full min-w-[640px] text-left text-sm">
                 <caption className="sr-only">Matching employees</caption>
                 <thead className="text-xs uppercase tracking-wide text-muted">
@@ -143,6 +158,7 @@ export function QueryPanel() {
                 </tbody>
               </table>
             </div>
+            </>
           ) : null}
 
           {!result.ok && result.suggestions.length > 0 ? (
