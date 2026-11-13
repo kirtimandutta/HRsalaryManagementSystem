@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ACME Corp Compensation Workspace
 
-## Getting Started
+HR workspace for a 10,000-person workforce: directory, gross-pay edits, payroll analytics, and a deterministic question mapper. The product requirements are in [PRD.md](PRD.md).
 
-First, run the development server:
+## Setup
+
+Requires Node.js 20 or newer.
 
 ```bash
+npm install
+copy .env.example .env
+npm run db:setup
+npm test
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`copy` is the Windows command. On macOS or Linux, use `cp .env.example .env`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Open [http://localhost:3000](http://localhost:3000).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`npm run db:setup` creates the SQLite file and loads exactly 10,000 employees. `npm run prisma:seed` reloads that workforce. **Reseeding deletes salary edits and the audit log.**
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+| Script | What it does |
+| --- | --- |
+| `npm run dev` | Next.js development server |
+| `npm run db:setup` | Push the Prisma schema and seed 10,000 employees |
+| `npm run prisma:seed` | Reseed an existing database |
+| `npm test` | Unit tests, component test, and integration tests when the database exists |
+| `npm run typecheck` | TypeScript without emitting files |
+| `npm run lint` | ESLint |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Integration tests skip themselves until `prisma/dev.db` exists, then check the seed count, the USD snapshot, payroll exclusion of terminated employees, an Ask the Org answer, and a salary edit that is rolled back.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Architecture
 
-## Deploy on Vercel
+- **Next.js App Router.** Overview and analytics are server components that read SQLite directly. The directory and Ask the Org call route handlers so the same operations are available as an HTTP API.
+- **SQLite + Prisma.** One file, no extra service, comfortable at this headcount for a single HR operator. Moving to PostgreSQL later is a datasource change. SQLite is the wrong engine once many people write at once.
+- **USD snapshot.** Local base, bonus, and allowance are the source of truth. `compensationSnapshot` in `lib/currency.ts` writes the USD columns on every seed row and every salary edit. Aggregates sum those columns and never add mixed currencies. Rates are the static card dated 1 Nov 2026.
+- **Payroll population.** Active and On Leave are included. Terminated employees stay in the directory and drop out of cost, average, and median.
+- **Ask the Org.** `lib/parse-question.ts` maps text to a fixed intent. It does not call a language model, so an answer can be traced and tested. A model can sit in front of the same intents later.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Money is rounded for analytics. This is not a payroll ledger and it does not calculate tax.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project layout
+
+- `prisma/schema.prisma`, `prisma/seed.ts` — model and the 10,000-row generator
+- `lib/` — currency, aggregation, filters, directory writes, stats, question mapper
+- `app/api/` — `GET /api/employees`, `GET/PATCH /api/employees/[id]`, `GET /api/stats`, `POST /api/queries`
+- `app/` — overview, directory, analytics, Ask the Org
+- `tests/` — aggregation, currency, filters, parser, copy, a metric card, and the seeded database
+
+## AI tooling
+
+This repository was implemented in Cursor with Grok as the coding agent. The agent scaffolded Next.js, wrote the domain model, and built the UI. Nothing in the running app calls a language model. Check the rate card, the Active / On Leave rule, and the seed distributions before treating a figure as a compensation decision.

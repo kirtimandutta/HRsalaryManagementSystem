@@ -1,0 +1,17 @@
+import path from "node:path";
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    environment: "node",
+    include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+    env: {
+      DATABASE_URL: "file:./dev.db",
+    },
+  },
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "."),
+    },
+  },
+});

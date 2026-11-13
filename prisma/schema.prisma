@@ -1,0 +1,63 @@
+// ACME Corp compensation workspace.
+// Local base, bonus, and allowance are the source of truth.
+// The USD columns are a derived snapshot from lib/currency.ts.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id             String     @id
+  employeeId     String     @unique
+  firstName      String
+  lastName       String
+  email          String     @unique
+  department     String
+  title          String
+  seniority      String
+  country        String
+  currency       String
+  employmentType String
+  baseSalary     Float
+  bonus          Float
+  allowance      Float
+  baseSalaryUsd  Float
+  bonusUsd       Float
+  allowanceUsd   Float
+  totalCompUsd   Float
+  hireDate       DateTime
+  status         String
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  auditLogs      AuditLog[]
+
+  @@index([department])
+  @@index([country])
+  @@index([currency])
+  @@index([seniority])
+  @@index([employmentType])
+  @@index([status])
+  @@index([totalCompUsd])
+  @@index([lastName, firstName])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  /// Foreign key to Employee.id (the primary key, not the human employee code).
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  action     String
+  field      String
+  oldValue   String
+  newValue   String
+  changedBy  String
+  createdAt  DateTime @default(now())
+
+  @@index([employeeId])
+  @@index([createdAt])
+}

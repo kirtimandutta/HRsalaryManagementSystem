@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // Payroll pages read SQLite on each request. Leave the template cache
+  // flag off so a salary edit shows up on the next load.
   turbopack: {
     rules: {
       "*.css": {
