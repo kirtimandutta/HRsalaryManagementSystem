@@ -99,9 +99,9 @@ async function seniorityBreakdown(where: Prisma.EmployeeWhereInput): Promise<Que
 }
 
 function response(question: string, intent: OrgIntent, partial: Omit<OrgQueryResponse, "question" | "intent" | "label" | "interpretation" | "ok" | "suggestions"> & { ok?: boolean }): OrgQueryResponse {
-  const unknown = intent.type === "unknown";
+  const unresolved = intent.type === "unknown" || intent.type === "ambiguous";
   return {
-    ok: partial.ok ?? !unknown,
+    ok: partial.ok ?? !unresolved,
     question,
     intent: intent.type,
     label: intentLabel(intent),
@@ -110,7 +110,7 @@ function response(question: string, intent: OrgIntent, partial: Omit<OrgQueryRes
     metrics: partial.metrics,
     breakdown: partial.breakdown,
     employees: partial.employees,
-    suggestions: unknown ? [...SAMPLE_QUESTIONS] : [],
+    suggestions: unresolved ? [...SAMPLE_QUESTIONS] : [],
   };
 }
 
@@ -154,6 +154,9 @@ export async function answerOrgQuestion(question: string): Promise<OrgQueryRespo
   switch (intent.type) {
     case "unknown":
       return response(question, intent, { ...emptyLists, summary: unknownSummary(), ok: false });
+
+    case "ambiguous":
+      return response(question, intent, { ...emptyLists, summary: describeIntent(intent), ok: false });
 
     case "average": {
       const population = populationPhrase(intent.department, intent.country);
@@ -219,7 +222,8 @@ export async function answerOrgQuestion(question: string): Promise<OrgQueryRespo
 
     case "top_earners": {
       const population = populationPhrase(intent.department, intent.country);
-      const employees = await people(payrollWhere(intent), intent.limit);
+      const where = payrollWhere(intent, intent.minUsd ? { totalCompUsd: { gte: intent.minUsd } } : {});
+      const employees = await people(where, intent.limit);
       const highest = employees[0]?.totalCompUsd ?? 0;
       const lowest = employees.at(-1)?.totalCompUsd ?? 0;
       return response(question, intent, {

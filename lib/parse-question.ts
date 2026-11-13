@@ -39,7 +39,7 @@ export type OrgIntent =
   | { type: "average"; department?: Department; country?: Country }
   | { type: "median"; department?: Department; country?: Country }
   | { type: "total_payroll"; department?: Department; country?: Country }
-  | { type: "top_earners"; limit: number; department?: Department; country?: Country }
+  | { type: "top_earners"; limit: number; department?: Department; country?: Country; minUsd?: number }
   | { type: "headcount"; department?: Department; country?: Country }
   | { type: "comp_mix"; department?: Department; country?: Country }
   | { type: "threshold"; amountUsd: number; department?: Department; country?: Country }
@@ -47,6 +47,7 @@ export type OrgIntent =
   | { type: "country_ranking" }
   | { type: "compare_departments"; departments: [Department, Department] }
   | { type: "snapshot"; department?: Department; country?: Country }
+  | { type: "ambiguous"; reason: "departments" | "countries"; names: [string, string] }
   | { type: "unknown" };
 
 type Scope = { department?: Department; country?: Country };
@@ -72,8 +73,12 @@ export function findDepartments(text: string): Department[] {
   return matchRules(text, DEPARTMENT_RULES);
 }
 
+export function findCountries(text: string): Country[] {
+  return matchRules(text, COUNTRY_RULES);
+}
+
 export function findCountry(text: string): Country | undefined {
-  return matchRules(text, COUNTRY_RULES)[0];
+  return findCountries(text)[0];
 }
 
 function readLimit(text: string): number {
@@ -84,14 +89,18 @@ function readLimit(text: string): number {
 }
 
 function findAmountUsd(text: string): number | undefined {
-  const match = text.match(/(?:\$|usd\s*)?(\d{1,3}(?:,\d{3})+|\d+)(\s*[km])?\b/);
-  if (!match?.[1]) return undefined;
-  let value = Number(match[1].replace(/,/g, ""));
-  const suffix = match[2]?.trim();
-  if (suffix === "k") value *= 1_000;
-  if (suffix === "m") value *= 1_000_000;
-  if (!Number.isFinite(value) || value <= 0) return undefined;
-  return value;
+  const pattern = /(?:\$|usd\s*)?(\d{1,3}(?:,\d{3})+|\d+)(\s*[km])?\b/g;
+  const amounts: number[] = [];
+  for (const match of text.matchAll(pattern)) {
+    let value = Number(match[1]?.replace(/,/g, ""));
+    const suffix = match[2]?.trim();
+    if (suffix === "k") value *= 1_000;
+    if (suffix === "m") value *= 1_000_000;
+    if (Number.isFinite(value) && value > 0) amounts.push(value);
+  }
+  if (amounts.length === 0) return undefined;
+  const meaningful = amounts.filter((value) => value >= 1_000);
+  return meaningful.at(-1) ?? amounts.at(-1);
 }
 
 /**
@@ -103,7 +112,8 @@ export function parseOrgQuestion(question: string): OrgIntent {
   if (!normalized) return { type: "unknown" };
 
   const departments = findDepartments(normalized);
-  const country = findCountry(normalized);
+  const countries = findCountries(normalized);
+  const country = countries[0];
   const department = departments[0];
   const scope: Scope = {
     ...(department ? { department } : {}),
@@ -117,9 +127,22 @@ export function parseOrgQuestion(question: string): OrgIntent {
   if (departments.length >= 2 && compareRequested) {
     return { type: "compare_departments", departments: [departments[0], departments[1]] };
   }
+  if (departments.length >= 2) {
+    return { type: "ambiguous", reason: "departments", names: [departments[0], departments[1]] };
+  }
+  if (countries.length >= 2) {
+    return { type: "ambiguous", reason: "countries", names: [countries[0], countries[1]] };
+  }
 
   if (/\btop\s+\d+\b|\btop\s+earners\b|\bhighest\s+earners\b|\bhighest\s+paid\b/.test(normalized)) {
-    return { type: "top_earners", limit: readLimit(normalized), ...scope };
+    const asksForFloor = /\bmore than\b|\bgreater than\b|\bover\b|\babove\b|\bat least\b/.test(normalized);
+    const minUsd = asksForFloor ? findAmountUsd(normalized) : undefined;
+    return {
+      type: "top_earners",
+      limit: readLimit(normalized),
+      ...scope,
+      ...(minUsd ? { minUsd } : {}),
+    };
   }
 
   if (/\bmedian\b/.test(normalized)) return { type: "median", ...scope };
@@ -172,6 +195,8 @@ export function intentLabel(intent: OrgIntent): string {
       return "Department comparison";
     case "snapshot":
       return "Population snapshot";
+    case "ambiguous":
+      return "Needs a single population";
     case "unknown":
       return "Unrecognized question";
   }
@@ -186,7 +211,9 @@ export function describeIntent(intent: OrgIntent): string {
     case "total_payroll":
       return `Annual gross payroll for ${populationPhrase(intent.department, intent.country)}.`;
     case "top_earners":
-      return `Top ${intent.limit} total-compensation earners in ${populationPhrase(intent.department, intent.country)}.`;
+      return intent.minUsd
+        ? `Top ${intent.limit} total-compensation earners in ${populationPhrase(intent.department, intent.country)} at or above ${intent.minUsd.toLocaleString("en-US")} USD.`
+        : `Top ${intent.limit} total-compensation earners in ${populationPhrase(intent.department, intent.country)}.`;
     case "headcount":
       return `Payroll headcount for ${populationPhrase(intent.department, intent.country)}.`;
     case "comp_mix":
@@ -201,6 +228,10 @@ export function describeIntent(intent: OrgIntent): string {
       return `Average total compensation for ${intent.departments[0]} beside ${intent.departments[1]}.`;
     case "snapshot":
       return `Headcount, average, median, payroll, and top earners for ${populationPhrase(intent.department, intent.country)}.`;
+    case "ambiguous":
+      return intent.reason === "countries"
+        ? `The question names ${intent.names[0]} and ${intent.names[1]}. Ask about one country at a time.`
+        : `The question names ${intent.names[0]} and ${intent.names[1]}. Ask about one department at a time, or compare them explicitly.`;
     case "unknown":
       return "The question did not match a known compensation query.";
   }

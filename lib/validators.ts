@@ -1,15 +1,19 @@
 import { z } from "zod";
 
+function moneyField(label: string) {
+  return z.number({
+    invalid_type_error: `${label} must be a number.`,
+  });
+}
+
 export const compensationPatchSchema = z
   .object({
-    baseSalary: z
-      .number()
+    baseSalary: moneyField("Base salary")
       .positive("Base salary must be greater than zero.")
       .max(100_000_000, "Base salary is too large.")
       .optional(),
-    bonus: z.number().nonnegative("Bonus cannot be negative.").max(100_000_000, "Bonus is too large.").optional(),
-    allowance: z
-      .number()
+    bonus: moneyField("Bonus").nonnegative("Bonus cannot be negative.").max(100_000_000, "Bonus is too large.").optional(),
+    allowance: moneyField("Allowance")
       .nonnegative("Allowance cannot be negative.")
       .max(100_000_000, "Allowance is too large.")
       .optional(),

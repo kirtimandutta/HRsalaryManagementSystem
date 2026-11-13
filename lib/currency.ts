@@ -8,6 +8,9 @@ import { CURRENCIES, type CurrencyCode } from "@/lib/constants";
 export const FX_AS_OF = "2026-11-01";
 export const FX_AS_OF_LABEL = "1 Nov 2026";
 
+/** Gross USD ceiling for one employee. The local-unit cap is not currency-aware on its own. */
+export const MAX_TOTAL_COMP_USD = 2_000_000;
+
 export const FX_TO_USD: Record<CurrencyCode, number> = {
   USD: 1,
   GBP: 1.27,

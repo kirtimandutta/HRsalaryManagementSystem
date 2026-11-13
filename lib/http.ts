@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { isDatabaseUnavailable } from "@/lib/db-error";
-import { EmployeeNotFoundError, NoCompensationChangeError } from "@/lib/employees";
+import { CompensationRejectedError, EmployeeNotFoundError, NoCompensationChangeError } from "@/lib/employees";
 
 export function errorResponse(error: unknown, fallback: string) {
   if (error instanceof EmployeeNotFoundError) {
     return NextResponse.json({ error: error.message }, { status: 404 });
   }
-  if (error instanceof NoCompensationChangeError) {
+  if (error instanceof NoCompensationChangeError || error instanceof CompensationRejectedError) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
   if (isDatabaseUnavailable(error)) {

@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client";
-import { compensationSnapshot } from "@/lib/currency";
+import { compensationSnapshot, MAX_TOTAL_COMP_USD } from "@/lib/currency";
 import { toEmployeeDto } from "@/lib/dto";
 import { buildEmployeeOrderBy, buildEmployeeWhere, type EmployeeQuery } from "@/lib/filters";
 import { prisma } from "@/lib/prisma";
@@ -17,6 +17,13 @@ export class NoCompensationChangeError extends Error {
   constructor() {
     super("No compensation changes to save.");
     this.name = "NoCompensationChangeError";
+  }
+}
+
+export class CompensationRejectedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CompensationRejectedError";
   }
 }
 
@@ -73,6 +80,12 @@ export async function updateCompensation(id: string, input: CompensationPatch): 
   const existing = await prisma.employee.findUnique({ where: { id } });
   if (!existing) throw new EmployeeNotFoundError();
 
+  if (input.currency !== undefined && input.currency !== existing.currency) {
+    throw new CompensationRejectedError(
+      "Currency cannot be changed on an existing salary. Enter the new amounts in the current currency so the USD total is not reinterpreted.",
+    );
+  }
+
   const next = {
     baseSalary: Math.round(input.baseSalary ?? existing.baseSalary),
     bonus: Math.round(input.bonus ?? existing.bonus),
@@ -90,13 +103,15 @@ export async function updateCompensation(id: string, input: CompensationPatch): 
   if (input.allowance !== undefined && !sameMoney(input.allowance, existing.allowance)) {
     changes.push({ field: "allowance", oldValue: String(existing.allowance), newValue: String(next.allowance) });
   }
-  if (input.currency !== undefined && input.currency !== existing.currency) {
-    changes.push({ field: "currency", oldValue: existing.currency, newValue: next.currency });
-  }
   if (changes.length === 0) throw new NoCompensationChangeError();
 
   const changedBy = (input.changedBy ?? "HR Manager").replace(/[\u0000-\u001F]/g, "").trim() || "HR Manager";
   const snapshot = compensationSnapshot(next);
+  if (snapshot.totalCompUsd > MAX_TOTAL_COMP_USD) {
+    throw new CompensationRejectedError(
+      `Total compensation would exceed $${MAX_TOTAL_COMP_USD.toLocaleString("en-US")} USD. Keep the gross amount inside that ceiling.`,
+    );
+  }
 
   const [updated] = await prisma.$transaction([
     prisma.employee.update({
