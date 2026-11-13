@@ -1,6 +1,26 @@
 import type { EmployeeDto } from "@/lib/types";
 import { totalCompLocal } from "@/lib/currency";
 
+export const employeeListSelect = {
+  id: true,
+  employeeId: true,
+  firstName: true,
+  lastName: true,
+  email: true,
+  department: true,
+  title: true,
+  seniority: true,
+  country: true,
+  currency: true,
+  employmentType: true,
+  baseSalary: true,
+  bonus: true,
+  allowance: true,
+  totalCompUsd: true,
+  hireDate: true,
+  status: true,
+} as const;
+
 export type EmployeeRecord = {
   id: string;
   employeeId: string;
@@ -16,9 +36,9 @@ export type EmployeeRecord = {
   baseSalary: number;
   bonus: number;
   allowance: number;
-  baseSalaryUsd: number;
-  bonusUsd: number;
-  allowanceUsd: number;
+  baseSalaryUsd?: number;
+  bonusUsd?: number;
+  allowanceUsd?: number;
   totalCompUsd: number;
   hireDate: Date | string;
   status: string;

@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import { compensationSnapshot, MAX_TOTAL_COMP_USD } from "@/lib/currency";
-import { toEmployeeDto } from "@/lib/dto";
+import { employeeListSelect, toEmployeeDto } from "@/lib/dto";
+import { invalidatePayrollCache } from "@/lib/payroll-cache";
 import { buildEmployeeOrderBy, buildEmployeeWhere, type EmployeeQuery } from "@/lib/filters";
 import { prisma } from "@/lib/prisma";
 import type { AuditDto, EmployeeDto, EmployeeListResponse } from "@/lib/types";
@@ -41,6 +42,7 @@ export async function listEmployees(query: EmployeeQuery): Promise<EmployeeListR
       orderBy,
       skip: (query.page - 1) * query.pageSize,
       take: query.pageSize,
+      select: employeeListSelect,
     }),
   ]);
 
@@ -56,7 +58,8 @@ export async function listEmployees(query: EmployeeQuery): Promise<EmployeeListR
 export async function getEmployeeDetail(id: string): Promise<{ employee: EmployeeDto; audits: AuditDto[] }> {
   const employee = await prisma.employee.findUnique({
     where: { id },
-    include: {
+    select: {
+      ...employeeListSelect,
       auditLogs: { orderBy: { createdAt: "desc" }, take: 8 },
     },
   });
@@ -130,5 +133,6 @@ export async function updateCompensation(id: string, input: CompensationPatch): 
     }),
   ]);
 
+  invalidatePayrollCache();
   return toEmployeeDto(updated);
 }

@@ -43,7 +43,9 @@ model Employee {
   @@index([employmentType])
   @@index([status])
   @@index([totalCompUsd])
-  @@index([lastName, firstName])
+  @@index([lastName, firstName, employeeId])
+  @@index([status, totalCompUsd])
+  @@index([department, country])
 }
 
 model AuditLog {

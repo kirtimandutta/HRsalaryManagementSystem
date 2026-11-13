@@ -206,15 +206,15 @@ export function buildEmployeeOrderBy(query: EmployeeQuery): OrderField[] {
     case "salary":
       return [{ totalCompUsd: dir }, { employeeId: "asc" }];
     case "department":
-      return [{ department: dir }, { lastName: "asc" }];
+      return [{ department: dir }, { lastName: "asc" }, { employeeId: "asc" }];
     case "country":
-      return [{ country: dir }, { lastName: "asc" }];
+      return [{ country: dir }, { lastName: "asc" }, { employeeId: "asc" }];
     case "hireDate":
       return [{ hireDate: dir }, { employeeId: "asc" }];
     case "employeeId":
       return [{ employeeId: dir }];
     case "name":
     default:
-      return [{ lastName: dir }, { firstName: dir }];
+      return [{ lastName: dir }, { firstName: dir }, { employeeId: "asc" }];
   }
 }

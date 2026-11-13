@@ -15,8 +15,8 @@ import {
   unknownSummary,
 } from "@/lib/answers";
 import { PAYROLL_STATUSES, SENIORITY_BANDS, type Country, type Department } from "@/lib/constants";
-import { median } from "@/lib/compensation";
-import { toEmployeeDto } from "@/lib/dto";
+import { employeeListSelect, toEmployeeDto } from "@/lib/dto";
+import { medianTotalComp } from "@/lib/stats";
 import { formatNumber, formatPercent, formatUsd } from "@/lib/format";
 import { describeIntent, intentLabel, parseOrgQuestion, SAMPLE_QUESTIONS, type OrgIntent } from "@/lib/parse-question";
 import { prisma } from "@/lib/prisma";
@@ -60,16 +60,13 @@ async function totals(where: Prisma.EmployeeWhereInput): Promise<Totals> {
 }
 
 async function medianOf(where: Prisma.EmployeeWhereInput): Promise<number> {
-  const rows = await prisma.employee.findMany({
-    where,
-    select: { totalCompUsd: true },
-  });
-  return median(rows.map((row) => row.totalCompUsd));
+  return medianTotalComp(where);
 }
 
 async function people(where: Prisma.EmployeeWhereInput, take: number): Promise<EmployeeDto[]> {
   const rows = await prisma.employee.findMany({
     where,
+    select: employeeListSelect,
     orderBy: [{ totalCompUsd: "desc" }, { employeeId: "asc" }],
     take,
   });
